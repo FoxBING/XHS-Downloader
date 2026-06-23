@@ -74,6 +74,11 @@ def parse_statistics(output):
     return None
 
 
+def count_downloaded_files(output):
+    # 统计实际下载成功的文件数（匹配"文件 xxx 下载成功"行）
+    return len(re.findall(r'文件 .+? 下载成功', output))
+
+
 async def download_link(xhs, link):
     print(f"\n{'='*50}")
     print(f"正在处理链接: {link}")
@@ -87,29 +92,30 @@ async def download_link(xhs, link):
         output = output_buffer.getvalue()
         print(output)
         stats = parse_statistics(output)
+        file_count = count_downloaded_files(output)
 
         if stats:
             if stats['fail'] > 0:
                 print(f"处理失败: 失败 {stats['fail']} 个")
-                return False, False
+                return False, False, file_count
             elif stats['skip'] > 0:
                 print(f"处理跳过: 跳过 {stats['skip']} 个")
-                return False, True
+                return False, True, file_count
             else:
-                print(f"处理成功: 成功 {stats['success']} 个")
-                return True, False
+                print(f"处理成功: 成功 {stats['success']} 个作品，下载 {file_count} 个文件")
+                return True, False, file_count
         else:
-            print(f"处理成功")
-            return True, False
+            print(f"处理成功: 下载 {file_count} 个文件")
+            return True, False, file_count
     except Exception as e:
         error_msg = str(e)
         print(f"处理出错: {error_msg}")
 
         if "'browser_cookie'" in error_msg:
             print("检测到配置错误（browser_cookie），将跳过等待时间继续处理下一个链接")
-            return False, True
+            return False, True, 0
         else:
-            return False, False
+            return False, False, 0
 
 
 async def main():
@@ -156,13 +162,15 @@ async def main():
     failed_links = []
     success_count = 0
     skip_count = 0
+    total_files = 0
 
     async with xhs:
         for i, link in enumerate(links, 1):
             print(f"\n{'-'*60}")
             print(f"开始处理链接 {i}/{len(links)}")
 
-            success, skipped = await download_link(xhs, link)
+            success, skipped, file_count = await download_link(xhs, link)
+            total_files += file_count
 
             if success:
                 success_count += 1
@@ -171,21 +179,31 @@ async def main():
             else:
                 failed_links.append(link)
 
+            # 累计进度：当前/总数 + 成功/跳过/失败 + 已下载文件数
+            progress = (
+                f"进度 {i}/{len(links)} | "
+                f"成功 {success_count} 跳过 {skip_count} 失败 {len(failed_links)} | "
+                f"已下载 {total_files} 文件"
+            )
+
             if i < len(links):
                 if skipped:
-                    print("\n直接处理下一个链接...")
+                    print(f"\n{progress}")
+                    print("直接处理下一个链接...\n")
                 else:
                     wait_time = random.randint(30, 60)
-                    print(f"\n随机等待 {wait_time} 秒后处理下一个链接...")
+                    print(f"\n{progress}")
+                    print(f"随机等待 {wait_time} 秒后处理下一个链接...")
                     for remaining in range(wait_time, 0, -1):
-                        sys.stdout.write(f"倒计时: {remaining}秒\r")
+                        sys.stdout.write(f"\r倒计时: {remaining}秒 / 共 {wait_time}秒")
                         sys.stdout.flush()
                         await asyncio.sleep(1)
                     print("\n")
 
     print(f"\n{'='*60}")
     print(f"所有链接处理完成！")
-    print(f"成功: {success_count}, 跳过: {skip_count}, 失败: {len(failed_links)}")
+    print(f"作品: 成功 {success_count}, 跳过 {skip_count}, 失败 {len(failed_links)}")
+    print(f"文件: 实际下载 {total_files} 个")
     print(f"{'='*60}")
 
     save_failed_links(failed_links)

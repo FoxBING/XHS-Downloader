@@ -18,7 +18,7 @@
 ### 我的脚本
 | 文件 | 说明 |
 |:----|:----|
-| `dl.py` | 批量下载器。从 `1.txt` 读取链接，预过滤已下载的，逐个下载（带随机间隔） |
+| `dl.py` | 批量下载器。从 `1.txt` 读取链接，预过滤已下载的，逐个下载（带随机间隔 + 累计进度显示 + 文件数统计） |
 | `1.txt` | 手动维护的链接队列，油猴脚本收集后粘贴于此 |
 | `failed.txt` | 自动生成，记录下载失败的链接，供下次重试 |
 
@@ -49,6 +49,17 @@ dl.py（我的调度器）
     ├── ExploreData.db    # 作品数据库（可选，record_data=True时）
     └── settings.json     # 配置文件（cookie、UA、代理等）
 ```
+
+### dl.py 核心函数
+| 函数 | 作用 |
+|:----|:----|
+| `extract_id_from_url()` | 用正则从 `/item/xxxxxxxx?...` 提取作品 ID |
+| `read_downloaded_ids()` | 用 sqlite3 直接读 `Volume/ExploreID.db` 的已下载 ID 集合 |
+| `read_links_from_1txt()` | 读取 `1.txt`，按空白字符分割成链接列表 |
+| `parse_statistics()` | 解析原作者输出的"共处理 N 个作品..."统计行 |
+| `count_downloaded_files()` | 解析原作者输出的"文件 xxx 下载成功"行，统计实际文件数 |
+| `download_link()` | 调用 `xhs.extract_cli()`，返回 (成功?, 跳过?, 文件数) |
+| `main()` | 主流程：读链接 → 预过滤 → 逐个下载（带累计进度） → 保存失败链接 |
 
 ### 过滤已下载链接的逻辑（在 dl.py 中）
 ```
