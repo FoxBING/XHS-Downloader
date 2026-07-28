@@ -2,7 +2,7 @@
 // @name           XHS-Downloader
 // @namespace      xhs_downloader
 // @homepage       https://github.com/JoeanAmier/XHS-Downloader
-// @version        2.3.3
+// @version        2.4.0
 // @tag            小红书
 // @tag            RedNote
 // @tag            XiaoHongShu
@@ -332,7 +332,7 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
             },
         }, // 位置配置
         position: {
-            bottom: '10rem', left: '3rem'
+            top: '6rem', right: '6rem'
         }, // 动画配置
         animation: {
             duration: 0.25, // 动画时长(s)
@@ -464,13 +464,26 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         try {
             const key = note.video?.consumer?.originVideoKey;
             if (key) return [`https://sns-video-bd.xhscdn.com/${key}`];
-            const video = note.video.media.stream.h265;
-            return [video[video.length - 1].masterUrl];
+            const allStreams = Object.values(note.video.media.stream).flat();
+            sortArray(allStreams, "height");
+            return [allStreams[0].backupUrls[0] || allStreams[0].masterUrl];
         } catch (error) {
             console.error("Error deal video URL:", error);
             return [];
         }
     };
+
+    /**
+     * @param {Array} arr - 原数组
+     * @param {String} key - 排序字段
+     */
+    function sortArray(arr, key) {
+        arr.sort((a, b) => {
+            const vA = a[key];
+            const vB = b[key];
+            return vB - vA;
+        });
+    }
 
     const generateImageUrl = note => {
         let images = note.imageList;
@@ -2001,8 +2014,8 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
         const icon = document.createElement('div');
         icon.style = `
             position: fixed;
-            bottom: ${config.position.bottom};
-            left: ${config.position.left};
+            top: ${config.position.top};
+            right: ${config.position.right};
             width: ${config.icon[config.icon.type].size}px;
             height: ${config.icon[config.icon.type].size}px;
             background: white;
@@ -2026,20 +2039,20 @@ Discord Community: https://discord.com/invite/ZYtmgKud9Y
     const menu = document.createElement('div');
     menu.style = `
         position: fixed;
-        bottom: calc(${config.position.bottom} + ${config.icon[config.icon.type].size}px + 1rem);
-        left: ${config.position.left};
+        top: calc(${config.position.top} + ${config.icon[config.icon.type].size}px + 1rem);
+        right: 0;
         width: 255px;
-        max-width: calc(100vw - 4rem);
+        max-width: calc(100vw - 1rem);
         background: white;
         border-radius: 16px;
         box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
         overflow: hidden;
         display: none;
         z-index: 9998;
-        transform-origin: bottom left;
+        transform-origin: top right;
         transition: all ${config.animation.duration}s ${config.animation.easing};
         opacity: 0;
-        transform: translateY(10px) scaleY(0.95);
+        transform: translateY(-10px) scaleY(0.95);
         will-change: transform, opacity;
     `;
 
