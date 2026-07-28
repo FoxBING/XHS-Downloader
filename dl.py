@@ -187,7 +187,8 @@ async def main():
             )
 
             if i < len(links):
-                if skipped:
+                # 失败或跳过时直接处理下一个，不倒计时
+                if skipped or not success:
                     print(f"\n{progress}")
                     print("直接处理下一个链接...\n")
                 else:
