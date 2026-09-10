@@ -10,16 +10,15 @@
 <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/JoeanAmier/XHS-Downloader?style=flat-square&color=a29bfe">
 <img alt="GitHub release (with filter)" src="https://img.shields.io/github/v/release/JoeanAmier/XHS-Downloader?style=flat-square&color=48dbfb">
 <br>
-<img alt="Static Badge" src="https://img.shields.io/badge/Python-3.12-b8e994?style=flat-square&logo=python&labelColor=3dc1d3">
+<img alt="Static Badge" src="https://img.shields.io/badge/Python-≥3.12-b8e994?style=flat-square&logo=python&labelColor=3dc1d3">
 <img alt="Static Badge" src="https://img.shields.io/badge/UserScript-ffec3d?style=flat-square&logo=tampermonkey&logoColor=%2300485B">
 <img src="https://img.shields.io/badge/Sourcery-enabled-884898?style=flat-square&color=1890ff" alt="">
 <img alt="Static Badge" src="https://img.shields.io/badge/Docker-badc58?style=flat-square&logo=docker">
 <img alt="GitHub all releases" src="https://img.shields.io/github/downloads/JoeanAmier/XHS-Downloader/total?style=flat-square&color=ffdd59">
-</div>
 <br>
-<p>🔥 <b>RedNote Link Extraction/Content Collection Tool</b>：Extract account-published, favorites, and liked notes links; extract search result notes links and user links; collect RedNote notes information; extract RedNote notes download addresses; download RedNote notes files!</p>
-<p>🔥 "RedNote", "XiaoHongShu" and "小红书" have the same meaning, and this project is collectively referred to as "RedNote".</p>
-<p>⭐ Due to the author's limited energy, I was unable to update the English document in a timely manner, and the content may have become outdated, partial translation is machine translation, the translation result may be incorrect, Suggest referring to Chinese documentation. If you want to contribute to translation, we warmly welcome you.</p>
+<p>🔥 <b>XiaoHongShu (RedNote) link extraction / content collection tool!</b></p>
+</div>
+<hr>
 <h1>📑 Project Features</h1>
 <details>
 <summary>Program Features and User Script Features (Click to Expand)</summary>
@@ -57,7 +56,7 @@
 </ul>
 </details>
 <h1>📸 Program Screenshots</h1>
-<p><a href="https://www.bilibili.com/video/BV1Fcb3zWEjt/">Watch Demo on Bilibili</a>；<a href="https://youtu.be/VIjDytHaopg">Watch Demo on YouTube</a></p>
+<p><a href="https://www.bilibili.com/video/BV1Rv8z62Ebx/">Watch Demo on Bilibili</a>；<a href="https://youtu.be/1WBKuLlOeNw">Watch Demo on YouTube</a></p>
 <img src="static/screenshot/程序运行截图EN1.png" alt="">
 <hr>
 <img src="static/screenshot/程序运行截图EN2.png" alt="">
@@ -83,9 +82,9 @@
 <p>⭐ This project includes GitHub Actions for automatic building executable files. Users can use GitHub Actions to build the latest source code into executable files at any time!</p>
 <p>⭐ For the automatic building executable files tutorial, please refer to the <code>Build of Executable File Guide</code> section of this document. If you need a more detailed step-by-step tutorial with illustrations, please <a href="https://mp.weixin.qq.com/s/TorfoZKkf4-x8IBNLImNuw">check out this article</a>!</p>
 <p><strong>Note: Due to the macOS platform's executable file <code>main</code> not being code-signed, it will be restricted by system security measures on first run. Please execute the command <code>xattr -cr project_folder_path</code> in the terminal to remove the security flag, after which it can run normally.</strong></p>
-<p>If you use the program in this way, the default download path for files is: <code>.\_internal\Volume\Download</code>; the configuration file path is: <code>.\_internal\Volume\settings.json</code></p>
+<p>If you use the program in this way, the default download path for files is: <code>.\Volume\Download</code>; the configuration file path is: <code>.\Volume\settings.json</code></p>
 <h3>Update Methods</h3>
-<p><strong>Method 1:</strong> Download and extract the files, then copy the old version of the <code>_internal\Volume</code> folder into the new version's <code>_internal</code> folder.</p>
+<p><strong>Method 1:</strong> Download and extract the files, then copy the old version's <code>Volume</code> folder into the new version's program root directory.</p>
 <p><strong>Method 2:</strong> Download and extract the files (do not run the program), then copy all files and directly overwrite the old version.</p>
 <h2>⌨️ Run from Source Code</h2>
 <ol>
@@ -192,10 +191,10 @@
 <td align="center">Settings proxy Value</td>
 </tr>
 <tr>
-<td align="center">skip</td>
+<td align="center">check_record</td>
 <td align="center">bool</td>
-<td align="center">Whether to skip notes with download records; set to <code>true</code> will not return notes data with download records; Optional parameter</td>
-<td align="center">false</td>
+<td align="center">Whether to skip notes with existing download records; Optional parameter</td>
+<td align="center">true</td>
 </tr>
 </tbody>
 </table>
@@ -297,9 +296,10 @@ async def example():
     work_path = "D:\\"  # Root path for saving note data/files, default: project root path
     folder_name = "Download"  # Folder name for storing note files (auto-created), default: Download
     name_format = "作品标题 作品描述"
-    user_agent = ""  # User-Agent
+    impersonate = "chrome146"  # Browser Impersonate Targets
     cookie = ""  # Xiaohongshu web Cookie
     proxy = None  # Network proxy
+    proxy_download = False  # Whether to use the network proxy from the proxy parameter when downloading files
     timeout = 5  # Request timeout limit, unit: seconds
     chunk = 1024 * 1024 * 10  # Data chunk size fetched from server per download, unit: bytes
     max_retry = 2  # Maximum retry count on request failure, unit: retries
@@ -321,9 +321,10 @@ async def example():
         work_path=work_path,
         folder_name=folder_name,
         name_format=name_format,
-        user_agent=user_agent,
+        impersonate=impersonate,
         cookie=cookie,
         proxy=proxy,
+        proxy_download=proxy_download,
         timeout=timeout,
         chunk=chunk,
         max_retry=max_retry,
@@ -399,10 +400,10 @@ async def example():
 <td align="center"><code>发布时间 作者昵称 作品标题</code></td>
 </tr>
 <tr>
-<td align="center">user_agent</td>
+<td align="center">impersonate</td>
 <td align="center">str</td>
-<td align="center">Browser User Agent</td>
-<td align="center">Built-in Chrome User Agent</td>
+<td align="center">Browser Impersonate Targets, refer to <a href="https://curl-cffi.readthedocs.io/en/latest/impersonate/targets.html">curl_cffi documentation</a></td>
+<td align="center">chrome146</td>
 </tr>
 <tr>
 <td align="center">cookie</td>
@@ -415,6 +416,12 @@ async def example():
 <td align="center">str</td>
 <td align="center">Set program proxy</td>
 <td align="center">null</td>
+</tr>
+<tr>
+<td align="center">proxy_download</td>
+<td align="center">bool</td>
+<td align="center">Whether to use the network proxy from the proxy parameter when downloading files</td>
+<td align="center">false</td>
 </tr>
 <tr>
 <td align="center">timeout</td>
@@ -538,9 +545,6 @@ async def example():
 <p>When <code>author_archive</code> is set to <code>true</code>, the program will store each author's notes in dedicated folders. If an author's nickname changes, the program automatically updates the nickname portion in existing downloaded filenames!</p>
 <p>Additionally, you can configure author aliases through the <code>mapping_data</code> parameter. When an alias is set, the program will use your custom alias instead of the original nickname in filenames!</p>
 </div>
-<hr>
-<p><b>Additional Notes: The parameters <code>user_agent</code> examples are provided for reference; Strongly recommend setting according to actual browser information!</b></p>
-<img src="static/screenshot/请求头示例图.png" alt="">
 <h1 id="cookie">🌐 Cookie</h1>
 <ol>
 <li>Open the browser (optional: start in incognito mode) and visit <code>https://www.xiaohongshu.com/explore</code></li>
@@ -653,14 +657,6 @@ repository to execute the build process
 
 # 💝 Project Sponsorship
 
-## Bloome
-
-<p><a href="https://bloome.im/app?ref=KUyJQU6F&utm_medium=github&utm_source=JoeanAmier-XHS-Downloader-ivor-202606"><img src="static/other/Bloome_AD.png" alt="Bloome"></a></p>
-<p>Don't want to deal with setting up the environment locally? You can integrate XHS-Downloader as an Agent with <a href="https://bloome.im/app?ref=KUyJQU6F&utm_medium=github&utm_source=JoeanAmier-XHS-Downloader-ivor-202606">Bloome</a>: zero configuration, one-click cloud deployment, accessible from both browser and mobile, and you can share your configured Agent directly with others without needing separate deployments!</p>
-<p>Try it now: <a href="https://bloome.im/app?ref=KUyJQU6F&utm_medium=github&utm_source=JoeanAmier-XHS-Downloader-ivor-202606">https://bloome.im/app?ref=KUyJQU6F&utm_medium=github&utm_source=JoeanAmier-XHS-Downloader-ivor-202606</a></p>
-
-***
-
 ## DartNode
 
 [![Powered by DartNode](static/other/DartNode_AD.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
@@ -711,7 +707,7 @@ repository to execute the build process
 </ul>
 <h1>⭐ Star History</h1>
 <p>
-<img alt="Star History Chart" src="https://api.star-history.com/svg?repos=JoeanAmier/XHS-Downloader&amp;type=Timeline"/>
+<img alt="Star History Chart" src="https://api.star-history.com/chart?repos=JoeanAmier/XHS-Downloader&type=timeline&legend=bottom-right&sealed_token=ZDTLh76ddaIS6ETR6NSuijagJA79HsTOsW-cTmNd8i7MHejvjsI_D6UaNW2JU-H4gEbmrNOPDssMQpIRvGh8dfn6Gz-QmUnD3BhdMbpcet3YWyisu2sJOq4VGJzyVTf78-JfuKGfbJvH-NEUtu5qQDvypXM9O6kP8i1K27YE9ZoTpYnmKKlHfTMNoDXT" />
 </p>
 <h1>⚠️ Disclaimer</h1>
 <ol>
@@ -733,11 +729,10 @@ repository to execute the build process
 
 # 💡 Project References
 
-* https://github.com/encode/httpx/
+* https://github.com/lexiforest/curl_cffi
 * https://github.com/tiangolo/fastapi
 * https://github.com/textualize/textual/
-* https://github.com/pyinstaller/pyinstaller
-* https://github.com/zbowling/beartype-pyinstaller-repro
+* https://github.com/marcelotduarte/cx_Freeze/
 * https://github.com/jlowin/fastmcp
 * https://github.com/omnilib/aiosqlite
 * https://github.com/carpedm20/emoji/
