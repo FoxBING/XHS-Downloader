@@ -5,18 +5,38 @@ import re
 import sqlite3
 import io
 from contextlib import redirect_stdout
+from datetime import datetime
 from pathlib import Path
 from source import XHS
-from source.module import Settings, ROOT
+from source.module import Settings, ROOT, VOLUME
 
-PROJECT_ROOT = ROOT.parent
+PROJECT_ROOT = ROOT
 TXT_FILE_PATH = PROJECT_ROOT / "1.txt"
 FAILED_TXT_PATH = PROJECT_ROOT / "failed.txt"
-EXPLORE_DB_PATH = ROOT / "ExploreID.db"
+EXPLORE_DB_PATH = VOLUME / "ExploreID.db"
+
+
+class Tee:
+    """同时输出到控制台和日志文件；倒计时类的 \\r 刷新只写控制台，保持日志干净"""
+
+    def __init__(self, console, log_file):
+        self.console = console
+        self.log_file = log_file
+
+    def write(self, text):
+        self.console.write(text)
+        if "\r" in text and "\n" not in text:
+            return
+        self.log_file.write(text)
+
+    def flush(self):
+        self.console.flush()
+        self.log_file.flush()
 
 
 def extract_id_from_url(url):
-    match = re.search(r'/item/([a-f0-9]+)\?', url)
+    # 兼容 /explore/{id}、/item/{id}、/discovery/item/{id}、/user/profile/{uid}/{id} 格式
+    match = re.search(r'(?:/(?:explore|item)|/user/profile/[a-f0-9]+)/([a-f0-9]+)', url)
     return match.group(1) if match else None
 
 
@@ -87,7 +107,7 @@ async def download_link(xhs, link):
 
     try:
         with redirect_stdout(output_buffer):
-            await xhs.extract_cli(link, download=True, index=None, data=False)
+            await xhs.extract_cli(link, download=True, index=None)
 
         output = output_buffer.getvalue()
         print(output)
@@ -121,7 +141,7 @@ async def download_link(xhs, link):
 async def main():
     print(f"{'='*60}")
     print(f"小红书随机间隔批量下载器 - 直接调用API")
-    print(f"下载间隔: 随机 30-60 秒")
+    print(f"下载间隔: 随机 2-5 分钟，每 20 个链接长休息 10-20 分钟")
     print(f"{'='*60}")
 
     links = read_links_from_1txt()
@@ -155,9 +175,10 @@ async def main():
         print("\n所有链接均已下载，无需处理！")
         return
 
-    settings = Settings(ROOT)
+    settings = Settings(VOLUME)
     params = settings.run()
     xhs = XHS(**params)
+    print(f"运行模式: {'Cookie 已配置（登录态）' if params.get('cookie') else '匿名模式（无 Cookie）'}")
 
     failed_links = []
     success_count = 0
@@ -167,7 +188,7 @@ async def main():
     async with xhs:
         for i, link in enumerate(links, 1):
             print(f"\n{'-'*60}")
-            print(f"开始处理链接 {i}/{len(links)}")
+            print(f"[{datetime.now():%m-%d %H:%M:%S}] 开始处理链接 {i}/{len(links)}")
 
             success, skipped, file_count = await download_link(xhs, link)
             total_files += file_count
@@ -192,9 +213,16 @@ async def main():
                     print(f"\n{progress}")
                     print("直接处理下一个链接...\n")
                 else:
-                    wait_time = random.randint(30, 60)
-                    print(f"\n{progress}")
-                    print(f"随机等待 {wait_time} 秒后处理下一个链接...")
+                    if i % 20 == 0:
+                        wait_time = random.randint(600, 1200)
+                        print(f"\n{progress}")
+                        print(f"已连续处理 {i} 个链接，长休息 {wait_time // 60} 分钟...")
+                    else:
+                        wait_time = random.randint(120, 300)
+                        print(f"\n{progress}")
+                        print(
+                            f"随机等待 {wait_time // 60} 分 {wait_time % 60:02d} 秒后处理下一个链接..."
+                        )
                     for remaining in range(wait_time, 0, -1):
                         sys.stdout.write(f"\r倒计时: {remaining}秒 / 共 {wait_time}秒")
                         sys.stdout.flush()
@@ -211,4 +239,11 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    log_dir = VOLUME / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"dl_{datetime.now():%Y%m%d_%H%M%S}.log"
+    with open(log_path, "w", encoding="utf-8") as log_file, redirect_stdout(
+        Tee(sys.stdout, log_file)
+    ):
+        asyncio.run(main())
+        print(f"\n本次运行日志: {log_path}")
